@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Sparkles, User } from "lucide-react";
+import { Send, Heart, User } from "lucide-react";
 
 interface Message {
   id: string;
@@ -11,7 +11,7 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: "init-1",
     role: "assistant",
-    text: "Bonjour. Une fois les données patient chargées, vous pourrez parcourir les segmentations critiques et échanger ici pour valider ou corriger l'analyse.",
+    text: "Bonjour ! 👋 Je suis là pour vous aider à comprendre votre rapport médical. Chargez votre document à gauche, puis posez-moi toutes vos questions ici. Je vous explique tout simplement !",
   },
 ];
 
@@ -36,7 +36,7 @@ const ChatPanel = () => {
         {
           id: `a-${Date.now()}`,
           role: "assistant",
-          text: "Cette démo affiche l'interface de revue. La réponse réelle viendrait du backend (Med-Gemini / RAG) selon la segmentation affichée.",
+          text: "C'est une très bonne question ! Dans cette démo, la réponse viendrait de l'analyse de votre rapport. N'hésitez pas à me poser d'autres questions 😊",
         },
       ]);
     }, 600);
@@ -52,23 +52,22 @@ const ChatPanel = () => {
   return (
     <div className="flex flex-col h-full bg-card">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-border/60 bg-ge-gradient relative overflow-hidden">
-        {/* Decorative circles */}
-        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-accent/20 blur-xl" />
+      <div className="px-5 py-4 border-b border-border/60 bg-gm-gradient relative overflow-hidden">
+        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-primary-foreground/10 blur-xl" />
         <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-primary-foreground/5 blur-lg" />
         <div className="relative">
           <h2 className="text-sm font-display font-semibold text-primary-foreground tracking-wide flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            Discussion & validation
+            <Heart className="w-4 h-4" />
+            Votre assistant santé
           </h2>
           <p className="text-xs text-primary-foreground/70 mt-1">
-            Validez ou recentrez l'analyse. Posez des questions sur la segmentation.
+            Posez vos questions, je vous explique simplement.
           </p>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-ge-gradient-soft">
+      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 bg-gm-gradient-soft">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -77,17 +76,17 @@ const ChatPanel = () => {
             <div
               className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-xs font-bold ${
                 msg.role === "assistant"
-                  ? "bg-secondary text-secondary-foreground shadow-ge-soft"
-                  : "bg-ge-gradient text-primary-foreground shadow-ge"
+                  ? "bg-secondary text-secondary-foreground shadow-gm-soft"
+                  : "bg-gm-gradient text-primary-foreground shadow-gm"
               }`}
             >
-              {msg.role === "assistant" ? <Sparkles className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
+              {msg.role === "assistant" ? <Heart className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
             </div>
             <div
               className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${
                 msg.role === "assistant"
-                  ? "rounded-2xl rounded-tl-md bg-card border border-border/60 text-foreground shadow-ge-soft"
-                  : "rounded-2xl rounded-tr-md bg-ge-gradient text-primary-foreground shadow-ge"
+                  ? "rounded-2xl rounded-tl-md bg-card border border-border/60 text-foreground shadow-gm-soft"
+                  : "rounded-2xl rounded-tr-md bg-gm-gradient text-primary-foreground shadow-gm"
               }`}
             >
               <p className="whitespace-pre-wrap break-words">{msg.text}</p>
@@ -99,19 +98,19 @@ const ChatPanel = () => {
 
       {/* Input */}
       <div className="px-4 py-3 border-t border-border/60 bg-card">
-        <div className="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2 focus-within:border-primary/50 focus-within:shadow-ge transition-all">
+        <div className="flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2 focus-within:border-primary/50 focus-within:shadow-gm transition-all">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Écrire un message…"
+            placeholder="Posez votre question ici…"
             rows={1}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none min-h-[40px] max-h-[120px] py-2"
           />
           <button
             onClick={sendMessage}
             disabled={!input.trim()}
-            className="w-9 h-9 rounded-lg bg-ge-gradient text-primary-foreground flex items-center justify-center flex-shrink-0 hover:scale-105 hover:shadow-ge-lg active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-9 h-9 rounded-lg bg-gm-gradient text-primary-foreground flex items-center justify-center flex-shrink-0 hover:scale-105 hover:shadow-gm-lg active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
           </button>

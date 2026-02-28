@@ -6,50 +6,51 @@
 
 @layer base {
   :root {
-    /* GE Healthcare Violet palette */
+    /* For GrandMa — warm, soft palette */
     --background: 0 0% 96%;
-    --foreground: 260 15% 12%;
+    --foreground: 0 10% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 260 15% 12%;
+    --card-foreground: 0 10% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 260 15% 12%;
+    --popover-foreground: 0 10% 18%;
 
-    --primary: 271 65% 40%;
+    --primary: 0 25% 62%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 271 40% 94%;
-    --secondary-foreground: 271 65% 30%;
+    --secondary: 268 20% 92%;
+    --secondary-foreground: 268 20% 35%;
 
-    --muted: 260 10% 93%;
-    --muted-foreground: 260 8% 50%;
+    --muted: 103 10% 92%;
+    --muted-foreground: 0 5% 45%;
 
-    --accent: 271 80% 52%;
+    --accent: 268 20% 65%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 12% 89%;
-    --input: 260 12% 89%;
-    --ring: 271 65% 40%;
+    --border: 0 10% 88%;
+    --input: 0 10% 88%;
+    --ring: 0 25% 62%;
 
     --radius: 0.875rem;
 
-    --violet-deep: 271 65% 32%;
-    --violet-bright: 271 80% 52%;
-    --violet-glow: 271 90% 65%;
-    --violet-mist: 271 60% 96%;
+    --rose-soft: 0 25% 74%;
+    --lavender-soft: 268 20% 72%;
+    --sage-soft: 103 12% 67%;
+    --rose-deep: 0 25% 55%;
+    --lavender-deep: 268 20% 55%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 260 15% 12%;
-    --sidebar-primary: 271 65% 40%;
+    --sidebar-foreground: 0 10% 18%;
+    --sidebar-primary: 0 25% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 271 80% 52%;
+    --sidebar-accent: 268 20% 65%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 260 12% 89%;
-    --sidebar-ring: 271 65% 40%;
+    --sidebar-border: 0 10% 88%;
+    --sidebar-ring: 0 25% 62%;
   }
 }
 
@@ -66,79 +67,79 @@
 
 @layer utilities {
   /* ===== Gradient backgrounds ===== */
-  .bg-ge-gradient {
-    background: linear-gradient(135deg, hsl(271 65% 40%), hsl(271 80% 52%), hsl(280 70% 60%));
+  .bg-gm-gradient {
+    background: linear-gradient(135deg, hsl(0 25% 74%), hsl(268 20% 72%), hsl(103 12% 67%));
   }
 
-  .bg-ge-gradient-soft {
-    background: linear-gradient(135deg, hsl(271 60% 96%), hsl(280 50% 97%), hsl(0 0% 96%));
+  .bg-gm-gradient-soft {
+    background: linear-gradient(135deg, hsl(0 25% 96%), hsl(268 20% 96%), hsl(103 12% 96%));
   }
 
-  .bg-ge-gradient-radial {
-    background: radial-gradient(ellipse at top left, hsl(271 80% 52% / 0.08), transparent 50%),
-                radial-gradient(ellipse at bottom right, hsl(280 70% 60% / 0.06), transparent 50%),
+  .bg-gm-gradient-radial {
+    background: radial-gradient(ellipse at top left, hsl(0 25% 74% / 0.08), transparent 50%),
+                radial-gradient(ellipse at bottom right, hsl(103 12% 67% / 0.06), transparent 50%),
                 hsl(0 0% 96%);
   }
 
-  .bg-ge-mesh {
+  .bg-gm-mesh {
     background: 
-      radial-gradient(at 20% 20%, hsl(271 80% 52% / 0.07) 0%, transparent 50%),
-      radial-gradient(at 80% 80%, hsl(280 70% 60% / 0.05) 0%, transparent 50%),
-      radial-gradient(at 50% 0%, hsl(271 65% 40% / 0.04) 0%, transparent 60%);
+      radial-gradient(at 20% 20%, hsl(0 25% 74% / 0.07) 0%, transparent 50%),
+      radial-gradient(at 80% 80%, hsl(103 12% 67% / 0.05) 0%, transparent 50%),
+      radial-gradient(at 50% 0%, hsl(268 20% 72% / 0.04) 0%, transparent 60%);
   }
 
-  .bg-ge-header {
-    background: linear-gradient(135deg, hsl(271 65% 32%), hsl(271 65% 40%), hsl(271 80% 52%));
+  .bg-gm-header {
+    background: linear-gradient(135deg, hsl(0 25% 62%), hsl(268 20% 65%), hsl(103 12% 60%));
   }
 
   /* ===== Text gradients ===== */
-  .text-ge-gradient {
+  .text-gm-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(271 65% 40%), hsl(271 80% 52%));
+    background-image: linear-gradient(135deg, hsl(0 25% 62%), hsl(268 20% 65%));
   }
 
-  .text-ge-gradient-bright {
+  .text-gm-gradient-bright {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(271 80% 52%), hsl(280 70% 60%), hsl(290 65% 65%));
+    background-image: linear-gradient(135deg, hsl(0 25% 74%), hsl(268 20% 72%), hsl(103 12% 67%));
   }
 
   /* ===== Glow & shadows ===== */
-  .shadow-ge {
-    box-shadow: 0 4px 24px hsl(271 65% 40% / 0.12), 0 1px 4px hsl(271 65% 40% / 0.06);
+  .shadow-gm {
+    box-shadow: 0 4px 24px hsl(0 25% 62% / 0.12), 0 1px 4px hsl(0 25% 62% / 0.06);
   }
 
-  .shadow-ge-lg {
-    box-shadow: 0 8px 40px hsl(271 80% 52% / 0.18), 0 2px 8px hsl(271 65% 40% / 0.08);
+  .shadow-gm-lg {
+    box-shadow: 0 8px 40px hsl(268 20% 65% / 0.18), 0 2px 8px hsl(0 25% 62% / 0.08);
   }
 
-  .shadow-ge-glow {
-    box-shadow: 0 0 30px hsl(271 80% 52% / 0.2), 0 0 60px hsl(271 80% 52% / 0.08), 0 4px 20px hsl(271 65% 40% / 0.1);
+  .shadow-gm-glow {
+    box-shadow: 0 0 30px hsl(0 25% 74% / 0.15), 0 0 60px hsl(268 20% 72% / 0.06), 0 4px 20px hsl(103 12% 67% / 0.08);
   }
 
-  .shadow-ge-soft {
-    box-shadow: 0 2px 16px hsl(271 65% 40% / 0.06), 0 0 0 1px hsl(271 65% 40% / 0.04);
+  .shadow-gm-soft {
+    box-shadow: 0 2px 16px hsl(0 25% 62% / 0.06), 0 0 0 1px hsl(0 25% 62% / 0.04);
   }
 
   /* ===== Glass ===== */
   .glass-white {
     @apply bg-card/80 backdrop-blur-xl;
-    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.6) inset, 0 2px 12px hsl(271 65% 40% / 0.04);
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.6) inset, 0 2px 12px hsl(0 25% 62% / 0.04);
   }
 
-  .glass-violet {
-    background: hsl(271 80% 52% / 0.06);
+  .glass-warm {
+    background: hsl(0 25% 74% / 0.06);
     backdrop-filter: blur(20px);
-    border: 1px solid hsl(271 80% 52% / 0.1);
+    border: 1px solid hsl(0 25% 74% / 0.1);
   }
 
   /* ===== Animations ===== */
-  @keyframes ge-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 hsl(271 80% 52% / 0.3); }
-    50% { box-shadow: 0 0 0 8px hsl(271 80% 52% / 0); }
+  @keyframes gm-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 hsl(0 25% 74% / 0.3); }
+    50% { box-shadow: 0 0 0 8px hsl(0 25% 74% / 0); }
   }
 
-  .animate-ge-pulse {
-    animation: ge-pulse 2.5s ease-in-out infinite;
+  .animate-gm-pulse {
+    animation: gm-pulse 2.5s ease-in-out infinite;
   }
 
   @keyframes float-up {
@@ -165,7 +166,7 @@
     inset: 0;
     border-radius: inherit;
     padding: 1.5px;
-    background: linear-gradient(90deg, transparent, hsl(271 80% 52% / 0.4), hsl(280 70% 60% / 0.3), transparent);
+    background: linear-gradient(90deg, transparent, hsl(0 25% 74% / 0.4), hsl(268 20% 72% / 0.3), transparent);
     background-size: 200% 100%;
     animation: shimmer 3s linear infinite;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -194,9 +195,9 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(271 40% 80%);
+  background: hsl(0 25% 80%);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(271 50% 65%);
+  background: hsl(268 20% 65%);
 }
