@@ -87,7 +87,8 @@ const ReportExplanationPanel = ({ result, isComplete = true, embedded = false }:
         </div>
       )}
 
-      {/* 2) Vulgarisation (3 blocs) — affichage en direct ou « en cours » */}
+      {/* 2) Vulgarisation (3 blocs) — affichée uniquement après réponses au contexte et analyse */}
+      {hasVulgarization && (
       <div className="rounded-xl border border-border/60 bg-card shadow-gm-soft overflow-hidden">
         <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -108,20 +109,9 @@ const ReportExplanationPanel = ({ result, isComplete = true, embedded = false }:
               À confirmer avec votre médecin
             </span>
           )}
-          {!hasVulgarization && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              En cours…
-            </span>
-          )}
         </div>
         <div className="p-4 space-y-4">
-          {!hasVulgarization ? (
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-              Explication en cours de rédaction…
-            </p>
-          ) : blocks.length > 0 ? (
+          {blocks.length > 0 ? (
             blocks.map((block, i) => (
               <div key={i}>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">
@@ -139,9 +129,10 @@ const ReportExplanationPanel = ({ result, isComplete = true, embedded = false }:
           )}
         </div>
       </div>
+      )}
 
-      {/* 3) Questions pour le médecin */}
-      {(hasQuestions || !isComplete) && (
+      {/* 3) Questions pour le médecin — affichées après analyse (ou "en cours" pendant le stream) */}
+      {(hasQuestions || (hasVulgarization && !isComplete)) && (
         <div className="rounded-xl border border-primary/20 bg-secondary/30 shadow-gm-soft overflow-hidden">
           <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
             <HelpCircle className="w-3.5 h-3.5 text-primary" />

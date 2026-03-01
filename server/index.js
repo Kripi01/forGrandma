@@ -11,7 +11,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
 import express from "express";
 import cors from "cors";
-import { runPipeline, sendSSE } from "./pipeline.js";
+import { runPipeline, runExtractionOnly, runPipelineFromExtraction, sendSSE } from "./pipeline.js";
+import { getContextQuestions } from "./contextQuestions.js";
 import { chatCompletion, performOCR } from "./llm.js";
 import { CHAT_SYSTEM, CHAT_USER } from "./prompts.js";
 
@@ -65,15 +66,46 @@ app.post("/api/report/understand", async (req, res) => {
 });
 
 /**
- * POST /api/report/understand-stream
+ * POST /api/report/extract
  * Body: { reportText: string }
- * Returns: SSE stream — events: extraction, vulgarization, validation, questions, done, error
+ * Returns: { extraction } — extraction seule pour afficher les questions de contexte puis lancer l'analyse avec contexte
+ */
+app.post("/api/report/extract", async (req, res) => {
+  try {
+    const { reportText } = req.body || {};
+    if (!reportText || typeof reportText !== "string") {
+      return res.status(400).json({ error: "reportText (string) is required" });
+    }
+    const extraction = await runExtractionOnly(reportText);
+    const contextQuestions = getContextQuestions(extraction.type_examen || "");
+    return res.json({ extraction, contextQuestions });
+  } catch (err) {
+    console.error("Extract error:", err.message);
+    return res.status(500).json({
+      error: err.message || "Erreur lors de l'extraction du rapport.",
+    });
+  }
+});
+
+/**
+ * GET /api/report/context-questions?type_examen=...
+ * Returns: { contextQuestions: { id, label }[] }
+ */
+app.get("/api/report/context-questions", (req, res) => {
+  const typeExamen = req.query.type_examen ? String(req.query.type_examen) : "";
+  const contextQuestions = getContextQuestions(typeExamen);
+  return res.json({ contextQuestions });
+});
+
+/**
+ * POST /api/report/understand-stream
+ * Body (option 1): { reportText: string } — pipeline complet classique
+ * Body (option 2): { extraction: object, patientContext?: Record<string, string> } — à partir d'une extraction déjà faite, avec contexte patient
+ * Returns: SSE stream — events: vulgarization, validation, questions, done, error (option 2 n'envoie pas extraction)
  */
 app.post("/api/report/understand-stream", async (req, res) => {
-  const { reportText } = req.body || {};
-  if (!reportText || typeof reportText !== "string") {
-    return res.status(400).json({ error: "reportText (string) is required" });
-  }
+  const body = req.body || {};
+  const { reportText, extraction, patientContext } = body;
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -87,7 +119,20 @@ app.post("/api/report/understand-stream", async (req, res) => {
   };
 
   try {
-    const result = await runPipeline(reportText, { onProgress });
+    let result;
+    if (extraction && typeof extraction === "object") {
+      // Option 2 : reprendre à partir de l'extraction avec contexte patient
+      sendSSE(res, "extraction", { extraction });
+      result = await runPipelineFromExtraction(extraction, {
+        onProgress,
+        patientContext: patientContext && typeof patientContext === "object" ? patientContext : {},
+      });
+    } else if (reportText && typeof reportText === "string") {
+      // Option 1 : pipeline complet depuis le texte
+      result = await runPipeline(reportText, { onProgress });
+    } else {
+      return res.status(400).json({ error: "reportText or extraction is required" });
+    }
     sendSSE(res, "done", result);
   } catch (err) {
     console.error("Pipeline stream error:", err.message);

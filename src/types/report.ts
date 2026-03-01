@@ -11,6 +11,15 @@ export type ReportPipelineResultPartial = Partial<ReportPipelineResult> & {
   extraction?: ExtractedFacts;
 };
 
+/** Question de contexte patient (adaptée au type d'examen) */
+export interface ContextQuestion {
+  id: string;
+  label: string;
+}
+
+/** Réponses du patient aux questions de contexte (id → réponse) */
+export type PatientContext = Record<string, string>;
+
 export interface ExtractedFacts {
   localisation?: string;
   type_examen?: string;

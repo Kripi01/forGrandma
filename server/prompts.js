@@ -33,6 +33,12 @@ Règles strictes :
 export const VULGARIZATION_USER = (extractionJson) =>
   `Vulgarise ce résumé structuré pour un patient. Réponds avec les 3 blocs séparés par "---".\n\n${extractionJson}`;
 
+/** Contexte patient optionnel pour adapter la vulgarisation (réponses aux questions de contexte). */
+export const VULGARIZATION_USER_WITH_CONTEXT = (extractionJson, patientContextStr) =>
+  patientContextStr
+    ? `Vulgarise ce résumé structuré pour un patient. Tu disposes du contexte patient suivant (réponses à des questions de contexte) pour adapter le ton et les précisions, sans jamais ajouter de diagnostic ni de conseil thérapeutique.\n\nContexte patient :\n${patientContextStr}\n\nRésumé structuré du rapport :\n${extractionJson}\n\nRéponds avec les 3 blocs séparés par "---".`
+    : VULGARIZATION_USER(extractionJson);
+
 export const VALIDATION_SYSTEM = `Tu es un relecteur qui vérifie qu'un texte de vulgarisation médicale est sûr.
 Vérifie :
 1) Le texte n'ajoute PAS de diagnostic (pas de "vous avez X", "c'est un cancer", etc.).
@@ -50,6 +56,12 @@ Règles : questions courtes, utiles, sans donner de réponses médicales. Une qu
 
 export const QUESTIONS_USER = (extractionJson, vulgarizationText) =>
   `Contexte du rapport :\n\nExtraction :\n${extractionJson}\n\nVulgarisation :\n${vulgarizationText}\n\nGénère 3 à 5 questions pour le médecin (une par ligne).`;
+
+/** Avec contexte patient pour personnaliser les questions suggérées. */
+export const QUESTIONS_USER_WITH_CONTEXT = (extractionJson, vulgarizationText, patientContextStr) =>
+  patientContextStr
+    ? `Contexte du rapport :\n\nExtraction :\n${extractionJson}\n\nVulgarisation :\n${vulgarizationText}\n\nContexte patient (réponses aux questions de contexte) :\n${patientContextStr}\n\nGénère 3 à 5 questions personnalisées que le patient pourrait poser à son médecin (une par ligne).`
+    : QUESTIONS_USER(extractionJson, vulgarizationText);
 
 export const CHAT_SYSTEM = `Tu es un compagnon qui aide le patient à comprendre son rapport d'imagerie. Tu ne remplaces pas le médecin.
 Règles strictes :

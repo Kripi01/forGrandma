@@ -2,7 +2,12 @@ import { useState, useCallback } from "react";
 import GrandMaLogo from "@/components/GrandMaLogo";
 import PdfViewer from "@/components/PdfViewer";
 import ChatPanel from "@/components/ChatPanel";
-import type { ReportPipelineResult, ReportPipelineResultPartial } from "@/types/report";
+import type {
+  ReportPipelineResult,
+  ReportPipelineResultPartial,
+  ContextQuestion,
+  PatientContext,
+} from "@/types/report";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -41,24 +46,57 @@ const Index = () => {
   const [pipelineResult, setPipelineResult] = useState<ReportPipelineResultPartial | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contextQuestions, setContextQuestions] = useState<ContextQuestion[] | null>(null);
+  const [patientContext, setPatientContext] = useState<PatientContext>({});
 
+  /** Phase 1 : extraction seule pour obtenir le type d'examen et les questions de contexte */
   const handleUnderstandReport = useCallback(async (reportText: string) => {
     setError(null);
     setLoading(true);
     setPipelineResult(null);
+    setContextQuestions(null);
+    setPatientContext({});
+    try {
+      const res = await fetch(`${API_BASE}/api/report/extract`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportText: reportText.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Erreur ${res.status}`);
+      }
+      const data = await res.json();
+      setPipelineResult({ extraction: data.extraction });
+      setContextQuestions(data.contextQuestions ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur lors de l'extraction.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /** Phase 2 : lancer vulgarisation + questions avec le contexte patient (après réponses dans le chat) */
+  const handleLaunchAnalysisWithContext = useCallback(async () => {
+    if (!pipelineResult?.extraction) return;
+    setError(null);
+    setLoading(true);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 180_000); // 3 min (Ollama peut être lent)
+    const timeoutId = setTimeout(() => controller.abort(), 180_000);
     try {
       const res = await fetch(`${API_BASE}/api/report/understand-stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportText: reportText.trim() }),
+        body: JSON.stringify({
+          extraction: pipelineResult.extraction,
+          patientContext,
+        }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Error ${res.status}`);
+        throw new Error(data.error || `Erreur ${res.status}`);
       }
       const reader = res.body?.getReader();
       if (!reader) throw new Error("Stream non disponible");
@@ -74,12 +112,9 @@ const Index = () => {
         }
         setPipelineResult((prev) => ({ ...prev, ...data }));
       });
-      setLoading(false);
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
-        setError(
-          "Analysis took too long. Check your GOOGLE_API_KEY (or other API) and that the backend server is running."
-        );
+        setError("L'analyse a pris trop de temps. Réessayez.");
       } else {
         setError(e instanceof Error ? e.message : "Erreur lors du traitement.");
       }
@@ -87,6 +122,16 @@ const Index = () => {
       clearTimeout(timeoutId);
       setLoading(false);
     }
+  }, [pipelineResult?.extraction, patientContext]);
+
+  const handlePatientContextChange = useCallback((id: string, value: string) => {
+    setPatientContext((prev) => ({ ...prev, [id]: value }));
+  }, []);
+  const setPatientContextBulk = useCallback((ctx: PatientContext) => {
+    setPatientContext(ctx);
+  }, []);
+  const clearPatientContext = useCallback(() => {
+    setPatientContext({});
   }, []);
 
   return (
@@ -121,7 +166,16 @@ const Index = () => {
             </div>
           )}
           <div className="flex-1 min-h-0 overflow-hidden">
-            <ChatPanel pipelineResult={pipelineResult} reportLoading={loading} />
+            <ChatPanel
+            pipelineResult={pipelineResult}
+            reportLoading={loading}
+            contextQuestions={contextQuestions}
+            patientContext={patientContext}
+            onPatientContextChange={handlePatientContextChange}
+            onLaunchAnalysisWithContext={handleLaunchAnalysisWithContext}
+            setPatientContextBulk={setPatientContextBulk}
+            clearPatientContext={clearPatientContext}
+          />
           </div>
         </div>
       </main>
