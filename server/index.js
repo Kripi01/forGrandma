@@ -32,9 +32,9 @@ const ROOT_HTML = `<!DOCTYPE html>
 </head>
 <body style="font-family:system-ui,sans-serif;max-width:40em;margin:2rem auto;padding:0 1rem;">
   <h1>For GrandMa API</h1>
-  <p>Le serveur est démarré. L’application s’utilise sur <strong>http://localhost:8080</strong>.</p>
-  <p>Lancez le frontend avec&nbsp;: <code>npm run dev</code></p>
-  <p>Endpoints&nbsp;: <code>POST /api/report/understand</code>, <code>POST /api/chat</code>, <code>GET /api/health</code></p>
+  <p>Le serveur est démarré. L'application s'utilise sur <strong>http://localhost:8080</strong>.</p>
+  <p>Lancez le frontend avec : <code>npm run dev</code></p>
+  <p>Endpoints : <code>POST /api/report/understand</code>, <code>POST /api/chat</code>, <code>GET /api/health</code></p>
 </body>
 </html>`;
 

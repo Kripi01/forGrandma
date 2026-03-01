@@ -4,9 +4,9 @@ Backend du pipeline agentique (extraction → vulgarisation → validation → q
 
 ## Lancer le serveur
 
-1. **Variables d’environnement**  
+1. **Variables d'environnement**  
    À la racine du projet, copier `.env.example` en `.env` et renseigner au minimum :
-   - `OPENAI_API_KEY` (clé API OpenAI ou compatible)
+   - `GOOGLE_API_KEY` (pour Gemma 3 27B) ou `OPENAI_API_KEY` (OpenAI ou compatible)
 
 2. **Dépendances**  
    Depuis la racine du projet :
@@ -26,7 +26,8 @@ Backend du pipeline agentique (extraction → vulgarisation → validation → q
 ## Endpoints
 
 - `POST /api/report/understand` — Body : `{ reportText: string }` → extraction, vulgarisation, validation, questions
+- `POST /api/report/understand-stream` — Même chose, en flux SSE
 - `POST /api/chat` — Body : `{ message: string, context: string, history?: { role, text }[] }` → `{ reply: string }`
 - `GET /api/health` — Santé du serveur
 
-Aucune donnée n’est persistée (no data leaks).
+Aucune donnée n'est persistée (no data leaks).

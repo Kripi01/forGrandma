@@ -58,7 +58,7 @@ const Index = () => {
       clearTimeout(timeoutId);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Erreur ${res.status}`);
+        throw new Error(data.error || `Error ${res.status}`);
       }
       const reader = res.body?.getReader();
       if (!reader) throw new Error("Stream non disponible");
@@ -78,7 +78,7 @@ const Index = () => {
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setError(
-          "L'analyse a pris trop de temps. Vérifiez votre clé GOOGLE_API_KEY (ou autre API) et que le serveur backend est démarré."
+          "Analysis took too long. Check your GOOGLE_API_KEY (or other API) and that the backend server is running."
         );
       } else {
         setError(e instanceof Error ? e.message : "Erreur lors du traitement.");

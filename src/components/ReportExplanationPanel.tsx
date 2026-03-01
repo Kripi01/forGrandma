@@ -150,7 +150,7 @@ const ReportExplanationPanel = ({ result, isComplete = true, embedded = false }:
               : (
                   <li className="text-sm text-muted-foreground flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                    Questions en cours de préparation…
+                    Questions being prepared…
                   </li>
                 )}
           </ul>
