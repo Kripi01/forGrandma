@@ -19,6 +19,7 @@ import { getContextQuestions } from "./contextQuestions.js";
 import { chatCompletion, performOCR } from "./llm.js";
 import { CHAT_SYSTEM, CHAT_USER } from "./prompts.js";
 import { runLegendes } from "./legendes.js";
+import { runAdaptVulgarizationToLegendes } from "./adaptVulgarization.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -220,6 +221,30 @@ app.post("/api/report/legendes", async (req, res) => {
     console.error("Legendes error:", err.message);
     return res.status(500).json({
       error: err.message || "Erreur lors de la génération des légendes.",
+    });
+  }
+});
+
+/**
+ * POST /api/report/adapt-vulgarization
+ * Body: { vulgarization: string, legendLabels: string[] }
+ * Returns: { vulgarization: string } — explication adaptée pour s'appuyer sur les légendes
+ */
+app.post("/api/report/adapt-vulgarization", async (req, res) => {
+  try {
+    const { vulgarization, legendLabels } = req.body || {};
+    if (!vulgarization || typeof vulgarization !== "string") {
+      return res.status(400).json({ error: "vulgarization (string) is required" });
+    }
+    const labels = Array.isArray(legendLabels) ? legendLabels : [];
+    console.log("[adapt-vulgarization] Adapting with", labels.length, "legend label(s):", labels.slice(0, 5));
+    const adapted = await runAdaptVulgarizationToLegendes(vulgarization, labels);
+    console.log("[adapt-vulgarization] Done, response length:", adapted?.length ?? 0, "contains legend ref:", labels.some((l) => adapted?.includes(l)));
+    return res.json({ vulgarization: adapted });
+  } catch (err) {
+    console.error("Adapt vulgarization error:", err.message);
+    return res.status(500).json({
+      error: err.message || "Erreur lors de l'adaptation de l'explication aux légendes.",
     });
   }
 });

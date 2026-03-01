@@ -49,11 +49,14 @@ const LeftPanel = ({ children, legendItems }: LeftPanelProps) => {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {!hasLegends || view === "report" ? (
-          children
-        ) : (
-          <div className="flex flex-col h-full">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        {/* Rapport : toujours monté pour garder le fichier/PDF affiché au retour sur l'onglet */}
+        <div className={`flex-1 min-h-0 flex flex-col ${!hasLegends || view === "report" ? "" : "hidden"}`}>
+          {children}
+        </div>
+        {/* Images légendées : affiché uniquement quand l'onglet Images est actif */}
+        {hasLegends && (
+          <div className={`flex-1 min-h-0 flex flex-col ${view === "legends" ? "" : "hidden"}`}>
             <div className="flex-1 min-h-0 overflow-auto flex items-center justify-center p-4 bg-gm-gradient-soft">
               {currentLegend && (
                 currentLegend.legendes && currentLegend.legendes.length > 0 ? (

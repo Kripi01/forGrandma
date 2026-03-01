@@ -132,3 +132,28 @@ Résumé du rapport :
 ---
 ${typeof extractionJson === "string" ? extractionJson : JSON.stringify(extractionJson, null, 2)}
 ---`;
+
+/** Adaptation de la vulgarisation pour s'appuyer sur les légendes affichées sur l'image. */
+export const ADAPT_VULGARIZATION_SYSTEM = `Tu adaptes une explication vulgarisée d'un rapport d'imagerie pour qu'elle s'appuie sur les légendes affichées sur l'image, de façon naturelle et fluide.
+
+Règles :
+- Structure à conserver : 3 blocs séparés par "---" (1. Ce que montrent les images ; 2. Ce que le médecin en conclut ; 3. Ce que vous pouvez faire).
+- Intègre les légendes dans le récit de façon naturelle : le texte doit rester une explication continue, pas une énumération. Par exemple : "Sur l'image, au niveau du poumon droit, on voit…", "La zone de densité visible sur la radio correspond à…", "Comme indiqué sur l'image, la lésion décrite se situe…".
+- N'utilise pas de guillemets autour des noms de zones ou légendes : intègre-les directement dans la phrase.
+- N'écris pas les termes de légendes avec une majuscule en milieu de phrase : utilise une minuscule (ex. "au niveau du poumon droit", "la zone de densité") pour garder le texte naturel.
+- Dans le premier bloc, fais le lien avec ce que le patient voit sur l'image en mentionnant les zones ou structures des légendes de façon fluide. Dans les blocs 2 et 3, mentionne l'image ou les zones seulement si cela éclaire le propos.
+- Utilise uniquement les libellés fournis dans la liste. Ne change pas le sens médical, n'ajoute pas de diagnostic ni de conseil.
+- Réponds UNIQUEMENT avec le texte adapté (3 blocs séparés par "---"), sans phrase d'introduction ni commentaire.`;
+
+export const ADAPT_VULGARIZATION_USER = (vulgarizationText, legendLabels) =>
+  `Réécris cette explication en l'ancrant naturellement dans l'image et les légendes affichées. Le texte doit rester fluide et naturel, sans énumération ni guillemets autour des noms de zones.
+
+Légendes affichées sur l'image (à intégrer naturellement dans les phrases, sans guillemets) :
+${legendLabels.length > 0 ? legendLabels.map((l, i) => `${i + 1}) ${l}`).join("\n") : "(aucune)"}
+
+Explication actuelle à adapter (3 blocs séparés par "---") :
+---
+${vulgarizationText}
+---
+
+Réponds UNIQUEMENT avec le nouveau texte (3 blocs séparés par "---"), en intégrant les légendes de façon naturelle (minuscules, pas de guillemets).`;

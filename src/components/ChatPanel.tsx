@@ -44,13 +44,14 @@ const ChatPanel = ({
     pipelineResult.questions != null;
   const canAsk = isReportComplete;
 
-  /** En attente des réponses au contexte : on a l'extraction, les questions de contexte, pas encore la vulgarisation */
+  /** En attente des réponses au contexte : on a l'extraction, les questions de contexte, pas encore la vulgarisation. On ne les affiche pas quand l'explication est en cours d'adaptation (legendItems = on a déjà lancé l'analyse avec images). */
   const awaitingContext =
     !!pipelineResult?.extraction &&
     Array.isArray(contextQuestions) &&
     contextQuestions.length >= 0 &&
     pipelineResult.vulgarization == null &&
-    !reportLoading;
+    !reportLoading &&
+    !(pipelineResult?.legendItems && pipelineResult.legendItems.length > 0);
 
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");

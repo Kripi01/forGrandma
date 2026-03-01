@@ -18,9 +18,10 @@ interface ReportExplanationPanelProps {
 
 /** Affiche les 4 blocs du pipeline : extraction résumée, vulgarisation, validation, questions pour le médecin (en direct si stream) */
 const ReportExplanationPanel = ({ result, isComplete = true, embedded = false }: ReportExplanationPanelProps) => {
-  const { extraction, vulgarization, validationOk, questions } = result;
+  const { extraction, vulgarization, validationOk, questions, legendItems } = result;
   const hasVulgarization = vulgarization != null && vulgarization !== "";
   const hasQuestions = questions != null && questions.length > 0;
+  const isAdaptingExplanation = (legendItems?.length ?? 0) > 0 && !hasVulgarization;
 
   const blocks = hasVulgarization ? vulgarization.split(/\s*---\s*/).filter(Boolean) : [];
   const blockLabels = [
@@ -87,8 +88,8 @@ const ReportExplanationPanel = ({ result, isComplete = true, embedded = false }:
         </div>
       )}
 
-      {/* 2) Vulgarisation (3 blocs) — affichée uniquement après réponses au contexte et analyse */}
-      {hasVulgarization && (
+      {/* 2) Vulgarisation (3 blocs) — affichée après adaptation aux légendes quand il y a des images, sinon après analyse */}
+      {(hasVulgarization || isAdaptingExplanation) && (
       <div className="rounded-xl border border-border/60 bg-card shadow-gm-soft overflow-hidden">
         <div className="px-4 py-3 border-b border-border/40 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -111,7 +112,12 @@ const ReportExplanationPanel = ({ result, isComplete = true, embedded = false }:
           )}
         </div>
         <div className="p-4 space-y-4">
-          {blocks.length > 0 ? (
+          {isAdaptingExplanation ? (
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+              <span>Préparation de l'explication à partir de vos images et des légendes…</span>
+            </div>
+          ) : blocks.length > 0 ? (
             blocks.map((block, i) => (
               <div key={i}>
                 <p className="text-xs font-semibold text-muted-foreground mb-1">

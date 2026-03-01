@@ -149,6 +149,9 @@ const Index = () => {
         }
         const reader = res.body?.getReader();
         if (!reader) throw new Error("Stream non disponible");
+        /** Seules les images d'imagerie optionnelles (radio, IRM…) sont légendées ; pas la photo du rapport. */
+        const allImagesForLegends = legendImageDataUrls ?? [];
+        const hasImagesForStream = allImagesForLegends.length > 0;
         await consumeSSE(reader, (event, data) => {
           if (event === "error") {
             setError((data as { error?: string }).error ?? "Erreur inconnue");
@@ -156,18 +159,16 @@ const Index = () => {
           }
           if (event === "done") {
             const fullResult = data as ReportPipelineResult;
-            const allImagesForLegends =
-              reportImageDataUrl ? [reportImageDataUrl, ...legendImageDataUrls] : legendImageDataUrls;
+            const hasImages = allImagesForLegends.length > 0;
             setPipelineResult({
               ...fullResult,
-              legendItems:
-                allImagesForLegends.length > 0
-                  ? allImagesForLegends.map((url) => ({ imageUrl: url, legendes: undefined }))
-                  : undefined,
+              legendItems: hasImages ? allImagesForLegends.map((url) => ({ imageUrl: url, legendes: undefined })) : undefined,
+              vulgarization: hasImages ? undefined : fullResult.vulgarization,
             });
             setLoading(false);
-            if (allImagesForLegends.length > 0 && fullResult.extraction) {
+            if (hasImages && fullResult.extraction) {
               const extractionPlain = getSafeExtraction(fullResult.extraction);
+              const firstVulgarization = fullResult.vulgarization ?? "";
               Promise.all(
                 allImagesForLegends.map((url) =>
                   fetch(`${API_BASE}/api/report/legendes`, {
@@ -179,22 +180,40 @@ const Index = () => {
                     .then((data: { legendes: LegendItem["legendes"] }) => ({ url, legendes: data.legendes }))
                     .catch(() => ({ url, legendes: [] }))
                 )
-              ).then((results) =>
-                setPipelineResult((prev) => {
-                  if (!prev?.legendItems) return prev;
-                  return {
-                    ...prev,
-                    legendItems: prev.legendItems.map((item, i) => ({
-                      ...item,
-                      legendes: results[i]?.legendes ?? [],
-                    })),
-                  };
-                })
-              );
+              ).then((results) => {
+                const legendItemsWithLegendes = allImagesForLegends.map((url, i) => ({
+                  imageUrl: url,
+                  legendes: results[i]?.legendes ?? [],
+                }));
+                const allLabels = legendItemsWithLegendes.flatMap((it) => it.legendes?.map((l) => l.label).filter(Boolean) ?? []);
+                setPipelineResult((prev) => (prev ? { ...prev, legendItems: legendItemsWithLegendes } : prev));
+                const applyVulgarization = (text: string) => {
+                  setPipelineResult((prev) => (prev ? { ...prev, vulgarization: text } : prev));
+                };
+                if (allLabels.length > 0 && firstVulgarization) {
+                  fetch(`${API_BASE}/api/report/adapt-vulgarization`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ vulgarization: firstVulgarization, legendLabels: allLabels }),
+                  })
+                    .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Adapt failed"))))
+                    .then((data: { vulgarization: string }) => {
+                      const adapted = data?.vulgarization?.trim();
+                      applyVulgarization(adapted || firstVulgarization);
+                    })
+                    .catch(() => applyVulgarization(firstVulgarization));
+                } else {
+                  applyVulgarization(firstVulgarization);
+                }
+              });
             }
             return;
           }
-          setPipelineResult((prev) => ({ ...prev, ...data }));
+          setPipelineResult((prev) => ({
+            ...prev,
+            ...data,
+            ...(hasImagesForStream ? { vulgarization: undefined } : {}),
+          }));
         });
       } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
