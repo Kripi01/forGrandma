@@ -61,4 +61,4 @@
 | Taille / complexité | OK |
 | Style / cohérence | OK |
 
-**Recommandation** : Vérifier qu’Ollama est lancé (`ollama run gemma3:27b`) et que le backend tourne sur le port 3001 avant de tester l’analyse du rapport PDF. En cas de timeout, les messages d’erreur guident désormais l’utilisateur.
+**Recommandation** : Vérifier qu’Ollama est lancé (`ollama run llama3.2`) et que le backend tourne sur le port 3001 avant de tester l’analyse du rapport PDF. En cas de timeout, les messages d’erreur guident désormais l’utilisateur.

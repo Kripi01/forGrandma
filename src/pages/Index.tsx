@@ -78,7 +78,7 @@ const Index = () => {
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setError(
-          "L'analyse a pris trop de temps. Vérifiez qu'Ollama tourne (ollama run gemma3:27b) et que le serveur backend est démarré."
+          "L'analyse a pris trop de temps. Vérifiez votre clé GOOGLE_API_KEY (ou autre API) et que le serveur backend est démarré."
         );
       } else {
         setError(e instanceof Error ? e.message : "Erreur lors du traitement.");
