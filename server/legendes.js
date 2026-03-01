@@ -77,6 +77,37 @@ function segmentsIntersect(a1, a2, b1, b2) {
   return false;
 }
 
+/**
+ * Retourne un point (x, y) sur le contour de l'image en coordonnées normalisées 0–1.
+ * Sens horaire à partir du coin supérieur gauche : haut → droite → bas → gauche.
+ * @param {number} t - Paramètre dans [0, 1[ (0 = haut-gauche, 0.25 = haut-droite, 0.5 = bas-droite, 0.75 = bas-gauche)
+ * @returns {[number, number]} [x, y]
+ */
+function getClockwiseBoundaryPoint(t) {
+  const p = (t % 1) * 4; // périmètre normalisé [0, 4[
+  if (p < 1) return [p, 0];           // bord haut (gauche → droite)
+  if (p < 2) return [1, p - 1];       // bord droit (haut → bas)
+  if (p < 3) return [3 - p, 1];      // bord bas (droite → gauche)
+  return [0, 4 - p];                  // bord gauche (bas → haut)
+}
+
+/**
+ * Répartit les points de départ (x1, y1) régulièrement en sens horaire autour de l'image.
+ * Garde (x2, y2) inchangés (pointe vers la zone). Évite les croisements en plaçant les départs de façon déterministe.
+ * @param {{ label: string, fleche: { x1, y1, x2, y2 } }[]} legendes
+ * @returns {typeof legendes}
+ */
+function assignStartsClockwise(legendes) {
+  const n = legendes.length;
+  if (n === 0) return legendes;
+  legendes.forEach((leg, i) => {
+    const [x1, y1] = getClockwiseBoundaryPoint(i / n);
+    leg.fleche.x1 = x1;
+    leg.fleche.y1 = y1;
+  });
+  return legendes;
+}
+
 /** Points de départ candidats sur le bord de l'image (coordonnées 0–1), déterministes pour éviter les croisements */
 function getBoundaryStarts() {
   const pts = [];
@@ -157,6 +188,7 @@ export async function runLegendes(imageDataUrl, extraction) {
     timeoutMs: 60_000,
   });
 
-  const legendes = parseLegendesResponse(raw);
+  let legendes = parseLegendesResponse(raw);
+  legendes = assignStartsClockwise(legendes);
   return resolveArrowCrossings(legendes);
 }

@@ -243,15 +243,15 @@ const Index = () => {
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-3 bg-card border-b border-border/60 glass-white relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gm-gradient flex items-center justify-center text-primary-foreground shadow-gm animate-gradient">
-            <GrandMaLogo className="w-6 h-6" />
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-gm-gradient flex items-center justify-center text-primary-foreground shadow-gm animate-gradient">
+            <GrandMaLogo className="w-9 h-9" />
           </div>
           <div>
-            <h1 className="text-base font-display font-bold text-foreground tracking-tight leading-tight">
+            <h1 className="text-lg font-display font-bold text-foreground tracking-tight leading-tight">
               For <span className="text-gm-gradient">GrandMa</span>
             </h1>
-            <p className="text-[11px] text-muted-foreground font-medium tracking-wide">Votre rapport médical, expliqué simplement</p>
+            <p className="text-xs text-muted-foreground font-medium tracking-wide">Votre rapport médical, expliqué simplement</p>
           </div>
         </div>
       </header>

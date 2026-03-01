@@ -98,15 +98,6 @@ const LeftPanel = ({ children, legendItems }: LeftPanelProps) => {
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-shrink-0 px-4 pb-4">
-              <button
-                type="button"
-                onClick={() => setView("report")}
-                className="w-full py-2.5 text-sm font-medium rounded-xl border border-border text-foreground hover:bg-secondary transition-colors"
-              >
-                Revenir au rapport
-              </button>
-            </div>
           </div>
         )}
       </div>

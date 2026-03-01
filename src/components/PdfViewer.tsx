@@ -237,25 +237,23 @@ const PdfViewer = ({ onUnderstandReport, onLegendImages, onReportImageSource, is
           <input ref={legendInputRef} type="file" accept="image/*" multiple onChange={handleLegendImagesChange} className="hidden" />
         </div>
 
-        {file && (
-          <div className="flex-shrink-0 border-t border-border/60 p-4 bg-card">
-            {extractError && (
-              <p className="text-sm text-destructive mb-3">{extractError}</p>
-            )}
-            <button
-              onClick={handleUnderstandReport}
-              disabled={isSubmitting || extracting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gm-gradient text-primary-foreground font-semibold text-sm shadow-gm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-            >
-              <Sparkles className="w-4 h-4" />
-              {extracting
-                ? (imageUrl ? "Lecture du rapport (IA)…" : "Extraction du texte…")
-                : isSubmitting
-                  ? "Analyse en cours…"
-                  : "Comprendre ce rapport"}
-            </button>
-          </div>
-        )}
+        <div className="flex-shrink-0 border-t border-border/60 p-4 bg-card">
+          {extractError && (
+            <p className="text-sm text-destructive mb-3">{extractError}</p>
+          )}
+          <button
+            onClick={handleUnderstandReport}
+            disabled={!file || isSubmitting || extracting}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gm-gradient text-primary-foreground font-semibold text-sm shadow-gm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+          >
+            <Sparkles className="w-4 h-4" />
+            {extracting
+              ? (imageUrl ? "Lecture du rapport (IA)…" : "Extraction du texte…")
+              : isSubmitting
+                ? "Analyse en cours…"
+                : "Comprendre ce rapport"}
+          </button>
+        </div>
       </div>
     </div>
   );
