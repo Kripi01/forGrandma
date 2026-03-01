@@ -67,12 +67,12 @@ const ChatPanel = ({ pipelineResult, reportLoading = false }: ChatPanelProps) =>
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Erreur ${res.status}`);
+        throw new Error(data.error || `Error ${res.status}`);
       }
       const data = await res.json();
       setChatMessages((prev) => [
         ...prev,
-        { id: `a-${Date.now()}`, role: "assistant", text: data.reply || "Désolé, je n'ai pas pu répondre." },
+        { id: `a-${Date.now()}`, role: "assistant", text: data.reply || "Sorry, I couldn't reply." },
       ]);
     } catch (e) {
       setChatMessages((prev) => [
@@ -80,7 +80,7 @@ const ChatPanel = ({ pipelineResult, reportLoading = false }: ChatPanelProps) =>
         {
           id: `a-${Date.now()}`,
           role: "assistant",
-          text: e instanceof Error ? e.message : "Une erreur s'est produite. Réessayez.",
+          text: e instanceof Error ? e.message : "Something went wrong. Please try again.",
         },
       ]);
     } finally {
@@ -108,10 +108,10 @@ const ChatPanel = ({ pipelineResult, reportLoading = false }: ChatPanelProps) =>
         <div className="relative">
           <h2 className="text-sm font-display font-semibold text-primary-foreground tracking-wide flex items-center gap-2">
             <Heart className="w-4 h-4" />
-            Votre assistant santé
+            Your health assistant
           </h2>
           <p className="text-xs text-primary-foreground/70 mt-1">
-            {canAsk ? "Posez vos questions, je vous explique simplement." : "L'analyse du rapport s'affiche ici."}
+            {canAsk ? "Ask your questions, I'll explain simply." : "The report analysis will appear here."}
           </p>
         </div>
       </div>
@@ -138,7 +138,7 @@ const ChatPanel = ({ pipelineResult, reportLoading = false }: ChatPanelProps) =>
                 </div>
                 <div className="max-w-[85%] px-4 py-3 text-sm leading-relaxed rounded-2xl rounded-tl-md bg-card border border-border/60 text-foreground shadow-gm-soft">
                   <p className="whitespace-pre-wrap break-words">
-                    Bonjour ! 👋 Chargez votre rapport PDF à gauche puis cliquez sur « Comprendre mon rapport ». L'analyse s'affichera ci-dessus, puis vous pourrez poser vos questions ici.
+                    Hello! 👋 Upload your PDF report on the left and click "Understand my report". The analysis will appear above, then you can ask your questions here.
                   </p>
                 </div>
               </div>
@@ -150,7 +150,7 @@ const ChatPanel = ({ pipelineResult, reportLoading = false }: ChatPanelProps) =>
                   <Heart className="w-3.5 h-3.5" />
                 </div>
                 <div className="max-w-[85%] px-4 py-3 text-sm rounded-2xl rounded-tl-md bg-card border border-border/60 text-muted-foreground shadow-gm-soft">
-                  J'analyse votre rapport, un instant…
+                  Analyzing your report, one moment…
                 </div>
               </div>
             )}
@@ -161,7 +161,7 @@ const ChatPanel = ({ pipelineResult, reportLoading = false }: ChatPanelProps) =>
                   <Heart className="w-3.5 h-3.5" />
                 </div>
                 <div className="max-w-[85%] px-4 py-3 text-sm leading-relaxed rounded-2xl rounded-tl-md bg-card border border-border/60 text-foreground shadow-gm-soft">
-                  Vous pouvez maintenant poser vos questions ci-dessous.
+                  You can now ask your questions below.
                 </div>
               </div>
             )}
@@ -203,7 +203,7 @@ const ChatPanel = ({ pipelineResult, reportLoading = false }: ChatPanelProps) =>
                   <Heart className="w-3.5 h-3.5" />
                 </div>
                 <div className="rounded-2xl rounded-tl-md bg-card border border-border/60 px-4 py-3 text-sm text-muted-foreground">
-                  Réflexion…
+                  Thinking…
                 </div>
               </div>
             )}
@@ -219,7 +219,7 @@ const ChatPanel = ({ pipelineResult, reportLoading = false }: ChatPanelProps) =>
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={
-              canAsk ? "Posez votre question ici…" : "L'analyse doit se terminer avant de poser une question."
+              canAsk ? "Ask your question here…" : "Wait for the analysis to finish before asking a question."
             }
             rows={1}
             disabled={!canAsk}

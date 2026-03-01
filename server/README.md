@@ -1,32 +1,33 @@
-# API For GrandMa
+# API For Grandma
 
-Backend du pipeline agentique (extraction → vulgarisation → validation → questions) et du chat ancré au rapport.
+Backend for the report pipeline (extraction → explanation → validation → questions) and report-anchored chat.
 
-## Lancer le serveur
+## Run the server
 
-1. **Variables d’environnement**  
-   À la racine du projet, copier `.env.example` en `.env` et renseigner au minimum :
-   - `OPENAI_API_KEY` (clé API OpenAI ou compatible)
+1. **Environment variables**  
+   At the project root, copy `.env.example` to `.env` and set at least:
+   - `GOOGLE_API_KEY` (for Gemma 3 27B) or `OPENAI_API_KEY` (OpenAI or compatible)
 
-2. **Dépendances**  
-   Depuis la racine du projet :
+2. **Dependencies**  
+   From the project root:
    ```bash
    cd server && npm install
    ```
 
-3. **Démarrage**  
-   Depuis la racine du projet :
+3. **Start**  
+   From the project root:
    ```bash
    npm run dev:server
    ```
-   Ou depuis `server/` : `npm start`
+   Or from `server/`: `npm start`
 
-   Le serveur écoute sur `http://localhost:3001`. Le frontend Vite (port 8080) proxy `/api` vers ce serveur.
+   Server listens on `http://localhost:3001`. The Vite frontend (port 8080) proxies `/api` to this server.
 
 ## Endpoints
 
-- `POST /api/report/understand` — Body : `{ reportText: string }` → extraction, vulgarisation, validation, questions
-- `POST /api/chat` — Body : `{ message: string, context: string, history?: { role, text }[] }` → `{ reply: string }`
-- `GET /api/health` — Santé du serveur
+- `POST /api/report/understand` — Body: `{ reportText: string }` → extraction, explanation, validation, questions
+- `POST /api/report/understand-stream` — Same, SSE stream
+- `POST /api/chat` — Body: `{ message: string, context: string, history?: { role, text }[] }` → `{ reply: string }`
+- `GET /api/health` — Server health
 
-Aucune donnée n’est persistée (no data leaks).
+No data is persisted (no data leaks).

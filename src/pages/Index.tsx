@@ -58,13 +58,13 @@ const Index = () => {
       clearTimeout(timeoutId);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Erreur ${res.status}`);
+        throw new Error(data.error || `Error ${res.status}`);
       }
       const reader = res.body?.getReader();
       if (!reader) throw new Error("Stream non disponible");
       await consumeSSE(reader, (event, data) => {
         if (event === "error") {
-          setError((data as { error?: string }).error ?? "Erreur inconnue");
+          setError((data as { error?: string }).error ?? "Unknown error");
           return;
         }
         if (event === "done") {
@@ -78,10 +78,10 @@ const Index = () => {
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setError(
-          "L'analyse a pris trop de temps. Vérifiez votre clé GOOGLE_API_KEY (ou autre API) et que le serveur backend est démarré."
+          "Analysis took too long. Check your GOOGLE_API_KEY (or other API) and that the backend server is running."
         );
       } else {
-        setError(e instanceof Error ? e.message : "Erreur lors du traitement.");
+        setError(e instanceof Error ? e.message : "Error during processing.");
       }
     } finally {
       clearTimeout(timeoutId);
@@ -99,9 +99,9 @@ const Index = () => {
           </div>
           <div>
             <h1 className="text-base font-display font-bold text-foreground tracking-tight leading-tight">
-              For <span className="text-gm-gradient">GrandMa</span>
+              For <span className="text-gm-gradient">Grandma</span>
             </h1>
-            <p className="text-[11px] text-muted-foreground font-medium tracking-wide">Votre rapport, expliqué simplement</p>
+            <p className="text-[11px] text-muted-foreground font-medium tracking-wide">Your report, explained simply</p>
           </div>
         </div>
       </header>
