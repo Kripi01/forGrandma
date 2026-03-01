@@ -12,14 +12,15 @@ dotenv.config({ path: path.join(__dirname, "..", ".env") });
 import express from "express";
 import cors from "cors";
 import { runPipeline, sendSSE } from "./pipeline.js";
-import { chatCompletion } from "./llm.js";
+import { chatCompletion, performOCR } from "./llm.js";
 import { CHAT_SYSTEM, CHAT_USER } from "./prompts.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({ origin: true }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 /** GET / — page HTML minimale (pas de script, pas d’image) pour éviter la vue JSON du navigateur et les erreurs CSP */
 const ROOT_HTML = `<!DOCTYPE html>
@@ -127,6 +128,29 @@ app.post("/api/chat", async (req, res) => {
     console.error("Chat error:", err.message);
     return res.status(500).json({
       error: err.message || "Erreur lors de la génération de la réponse.",
+    });
+  }
+});
+
+/**
+ * POST /api/report/ocr
+ * Body: { image: string } (data URL base64)
+ * Returns: { text: string }
+ */
+app.post("/api/report/ocr", async (req, res) => {
+  try {
+    const { image } = req.body || {};
+    if (!image || typeof image !== "string") {
+      return res.status(400).json({ error: "image (base64 data url) is required" });
+    }
+    console.log("Démarrage de l'OCR pour une image de taille:", image.length);
+    const text = await performOCR(image);
+    console.log("OCR réussi, texte extrait (aperçu):", text.slice(0, 100));
+    return res.json({ text });
+  } catch (err) {
+    console.error("Détail de l'erreur OCR:", err);
+    return res.status(500).json({
+      error: err.message || "Erreur lors de l'OCR de l'image.",
     });
   }
 });

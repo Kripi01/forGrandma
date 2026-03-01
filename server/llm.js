@@ -18,7 +18,7 @@ const getConfig = () => {
 
 /**
  * Convertit les messages OpenAI (system, user, assistant) en format Gemini (contents uniquement).
- * gemma-3-27b-it n'accepte pas systemInstruction : on fusionne le system dans le premier message user.
+ * Supporte désormais les images (base64).
  */
 function toGeminiPayload(messages, generationConfig) {
   let systemText = "";
@@ -30,21 +30,51 @@ function toGeminiPayload(messages, generationConfig) {
       continue;
     }
     const role = msg.role === "assistant" ? "model" : "user";
-    let text = msg.content;
-    if (role === "user" && systemText) {
-      text = systemText + "\n\n" + text;
-      systemText = "";
+    
+    const parts = [];
+    
+    // Si le contenu est une chaîne, c'est du texte simple
+    if (typeof msg.content === "string") {
+      let text = msg.content;
+      if (role === "user" && systemText) {
+        text = systemText + "\n\n" + text;
+        systemText = "";
+      }
+      parts.push({ text });
+    } 
+    // Si c'est un tableau, il peut contenir du texte et des images (format OpenAI-like)
+    else if (Array.isArray(msg.content)) {
+      for (const item of msg.content) {
+        if (item.type === "text") {
+          let text = item.text;
+          if (role === "user" && systemText) {
+            text = systemText + "\n\n" + text;
+            systemText = "";
+          }
+          parts.push({ text });
+        } else if (item.type === "image_url") {
+          // Format attendu: data:image/jpeg;base64,...
+          const dataUrl = item.image_url.url;
+          const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+          if (match) {
+            parts.push({
+              inlineData: {
+                mimeType: match[1],
+                data: match[2],
+              },
+            });
+          }
+        }
+      }
     }
-    contents.push({
-      role,
-      parts: [{ text }],
-    });
+
+    contents.push({ role, parts });
   }
 
   return {
     contents,
     generationConfig: {
-      maxOutputTokens: generationConfig.maxOutputTokens ?? 1024,
+      maxOutputTokens: generationConfig.maxOutputTokens ?? 2048,
       temperature: generationConfig.temperature ?? 0.3,
     },
   };
@@ -55,9 +85,9 @@ function toGeminiPayload(messages, generationConfig) {
  */
 async function chatCompletionGemini(messages, options = {}) {
   const { googleKey } = getConfig();
-  const maxTokens = options.max_tokens ?? 1024;
+  const maxTokens = options.max_tokens ?? 2048;
   const temperature = options.temperature ?? 0.3;
-  const timeoutMs = options.timeoutMs ?? 90_000;
+  const timeoutMs = options.timeoutMs ?? 120_000; // Augmenté à 2 minutes pour l'OCR
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -107,7 +137,7 @@ async function chatCompletionGemini(messages, options = {}) {
 async function chatCompletionOpenAI(messages, options = {}) {
   const { apiKey, baseUrl, isLocal } = getConfig();
   const model = options.model || process.env.OPENAI_MODEL || (isLocal ? "llama3.2" : "gpt-4o-mini");
-  const maxTokens = options.max_tokens ?? 1024;
+  const maxTokens = options.max_tokens ?? 2048;
   const temperature = options.temperature ?? 0.3;
   const timeoutMs = options.timeoutMs ?? 90_000;
 
@@ -157,7 +187,25 @@ async function chatCompletionOpenAI(messages, options = {}) {
 }
 
 /**
- * @param {Array<{ role: 'system' | 'user' | 'assistant'; content: string }>} messages
+ * Effectue l'OCR d'une image (base64) via Gemma 3 (Vision).
+ * @param {string} base64DataUrl - "data:image/jpeg;base64,..."
+ */
+export async function performOCR(base64DataUrl) {
+  const prompt = "Veuillez extraire tout le texte lisible de ce document médical. Ne faites aucun commentaire, ne résumez pas, extrayez simplement le texte tel quel (OCR).";
+  const messages = [
+    {
+      role: "user",
+      content: [
+        { type: "image_url", image_url: { url: base64DataUrl } },
+        { type: "text", text: prompt },
+      ],
+    },
+  ];
+  return chatCompletion(messages, { max_tokens: 2048, temperature: 0 }); // Température à 0 pour plus de précision
+}
+
+/**
+ * @param {Array<{ role: 'system' | 'user' | 'assistant'; content: string | Array<any> }>} messages
  * @param {{ model?: string; max_tokens?: number; temperature?: number }} options
  * @returns {Promise<string>} contenu du premier choix
  */
