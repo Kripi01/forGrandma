@@ -1,9 +1,23 @@
+/** Annotation de légende : flèche + label (coordonnées normalisées 0–1) */
+export interface LegendAnnotation {
+  label: string;
+  fleche: { x1: number; y1: number; x2: number; y2: number };
+}
+
+/** Une image d'imagerie (radio/IRM) avec ses légendes générées par le LLM */
+export interface LegendItem {
+  imageUrl: string;
+  legendes?: LegendAnnotation[] | null;
+}
+
 /** Sortie du pipeline backend (POST /api/report/understand) */
 export interface ReportPipelineResult {
   extraction: ExtractedFacts;
   vulgarization: string;
   validationOk: boolean;
   questions: string[];
+  /** Images d'imagerie (radio/IRM) ajoutées par le patient, avec légendes (flèches) — en lien avec l'explication vulgarisée */
+  legendItems?: LegendItem[];
 }
 
 /** Résultat partiel (streaming) : chaque champ peut arriver au fil de l’eau */

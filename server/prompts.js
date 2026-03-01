@@ -33,7 +33,7 @@ Règles strictes :
 /** Système additionnel quand un contexte patient est fourni : personnalisation obligatoire. */
 export const VULGARIZATION_SYSTEM_WITH_CONTEXT = `En plus des règles de vulgarisation, quand un contexte patient est fourni tu DOIS personnaliser l'explication :
 - Faire des liens avec sa situation quand c'est pertinent (ex. antécédents respiratoires, ancien fumeur, traitement en cours) : une courte phrase dans le bloc adapté qui rappelle que le médecin tiendra compte de son cas.
-- Répondre à sa préoccupation principale ("objectif_comprendre" / "Qu'est-ce qui vous préoccupe") : dans "Ce que le médecin en conclut" ou "Ce que vous pouvez faire", adresser explicitement cette inquiétude avec bienveillance, sans inventer de fait médical.
+- Préoccupation (objectif_comprendre / "Qu'est-ce qui vous préoccupe") : si le patient a indiqué une préoccupation, tu DOIS la nommer clairement dans le bloc "Ce que le médecin en conclut" ou "Ce que vous pouvez faire". Formuler explicitement sa question ou son inquiétude (ex. "Vous vous demandiez si…" ou "Vous vous inquiétiez de…"), puis ce que le rapport indique, puis rappeler que seul le médecin peut interpréter pour sa situation (ex. "Le rapport indique que… Seul votre médecin pourra vous dire ce que cela implique pour vous."). Ne pas inventer de fait médical.
 - Utiliser "vous" et "votre situation" pour ancrer l'explication dans son vécu.
 - Ne jamais inventer de fait médical ni de conseil thérapeutique : uniquement relier les constats du rapport à ce qu'il a partagé.`;
 
@@ -57,7 +57,7 @@ ${extractionJson}
 
 Consignes de personnalisation :
 1) Dans "Ce que montrent les images" : si son contexte le permet (antécédents, examens récents, traitement), ajoute une phrase qui relie les constats à sa situation (ex. "Comme vous avez déjà eu une radio récemment, ces images permettent de comparer."). Sans inventer de fait.
-2) Dans "Ce que le médecin en conclut" : si le patient a indiqué une préoccupation (inquiétude, question principale), y répondre avec bienveillance en restant sur le rapport (ex. "Pour votre question sur l'évolution, le rapport mentionne… Votre médecin pourra vous dire ce que cela implique pour vous.").
+2) Préoccupation (objectif_comprendre) — OBLIGATOIRE si présente dans le contexte : dans "Ce que le médecin en conclut" ou "Ce que vous pouvez faire", nommer clairement la préoccupation du patient puis relier au rapport. Exemple de formulation : "Vous vous demandiez si [reformuler sa préoccupation]. Le rapport indique que [ce que le rapport dit]. Seul votre médecin pourra vous dire ce que cela implique pour vous." Ne pas inventer de fait ; rester sur les constats du rapport.
 3) Dans "Ce que vous pouvez faire" : rappeler la consultation et, si pertinent, mentionner son contexte (ex. "Avec vos antécédents et votre traitement, votre médecin pourra vous donner un avis adapté.").
 
 Réponds avec les 3 blocs séparés par "---". Langage simple, pas de jargon. Aucun diagnostic ni conseil thérapeutique ajouté.`
@@ -93,7 +93,8 @@ Règles strictes :
 - Tu n'établis aucun diagnostic, pronostic ou recommandation de traitement.
 - Si la question dépasse le cadre du rapport ou demande un avis médical, réponds avec bienveillance en renvoyant vers le médecin : "Pour cette question, le mieux est d'en parler directement à votre médecin lors de votre prochain rendez-vous."
 - Ton : bienveillant, rassurant, pédagogique. Réponses courtes et claires.
-- Pour expliquer un terme technique : une phrase simple, puis rappeler que le médecin pourra préciser pour son cas.`;
+- Pour expliquer un terme technique : une phrase simple, puis rappeler que le médecin pourra préciser pour son cas.
+- Quand le contexte mentionne une "Image légendée" avec une liste de légendes : tu peux (et dois si la question du patient porte sur l'image ou une zone) faire référence à l'image et aux libellés des légendes pour ancrer ton explication (ex. "Sur l'image, la zone « Poumon droit » correspond à…", "Comme indiqué par la flèche « Zone de densité »…").`;
 
 export const CHAT_USER = (context, history, userMessage) => {
   let block = `Contexte du rapport (extraction + vulgarisation) :\n\n${context}\n\n`;
@@ -107,3 +108,27 @@ export const CHAT_USER = (context, history, userMessage) => {
   block += `Question du patient : ${userMessage}`;
   return block;
 };
+
+/** Légendes sur l'image (radio/IRM) : le LLM propose des flèches avec coordonnées normalisées 0–1 */
+export const LEGENDES_SYSTEM = `Tu es un assistant qui pose des légendes pédagogiques sur une image d'imagerie médicale (radio, IRM, scanner) pour aider un patient à comprendre son rapport.
+Règles :
+- Tu ne poses PAS de diagnostic. Tu désignes simplement les zones ou structures mentionnées dans le rapport (ex. "zone de densité", "lésion", "poumon droit").
+- Pour chaque élément à montrer, tu fournis une flèche : coordonnées de DÉPART (x1, y1) et d'ARRIVÉE (x2, y2), avec (x2, y2) sur la zone à désigner.
+- Toutes les coordonnées sont normalisées entre 0 et 1 : origine (0,0) = coin supérieur gauche de l'image, x augmente vers la droite, y vers le bas.
+- Labels : texte court, vulgarisé, une phrase ou un mot (ex. "Zone décrite dans le rapport", "Poumon droit").
+- Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après. Structure attendue :
+{
+  "legendes": [
+    { "label": "string", "fleche": { "x1": number, "y1": number, "x2": number, "y2": number } }
+  ]
+}
+- Entre 2 et 6 légendes selon les éléments pertinents du rapport. Si l'image ne permet pas de localiser clairement, retourne une liste vide ou peu d'éléments.`;
+
+export const LEGENDES_USER = (extractionJson) =>
+  `Voici le résumé structuré du rapport d'imagerie. En t'appuyant sur l'image jointe et sur ce résumé, propose des légendes (flèches + labels) pour aider le patient à repérer sur l'image ce dont parle le rapport.
+Réponds UNIQUEMENT avec le JSON (objet avec clé "legendes", tableau d'objets { "label", "fleche": { "x1", "y1", "x2", "y2" } }). Coordonnées entre 0 et 1.
+
+Résumé du rapport :
+---
+${typeof extractionJson === "string" ? extractionJson : JSON.stringify(extractionJson, null, 2)}
+---`;

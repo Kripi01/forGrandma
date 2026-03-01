@@ -1,22 +1,26 @@
 import { useState, useRef } from "react";
-import { FileText, Upload, Sparkles, Camera, Image as ImageIcon } from "lucide-react";
+import { FileText, Upload, Sparkles, Camera, ImagePlus, X } from "lucide-react";
 import { extractTextFromPdf } from "@/lib/pdfText";
 
 interface PdfViewerProps {
   onUnderstandReport?: (reportText: string) => void;
+  /** Images d'imagerie (radio/IRM) ajoutées en plus du rapport — pour les légendes. Appelé avec les data URLs. */
+  onLegendImages?: (dataUrls: string[]) => void;
   isSubmitting?: boolean;
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
-const PdfViewer = ({ onUnderstandReport, isSubmitting = false }: PdfViewerProps) => {
+const PdfViewer = ({ onUnderstandReport, onLegendImages, isSubmitting = false }: PdfViewerProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [legendDataUrls, setLegendDataUrls] = useState<string[]>([]);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [extracting, setExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const legendInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -28,11 +32,40 @@ const PdfViewer = ({ onUnderstandReport, isSubmitting = false }: PdfViewerProps)
         setImageUrl(null);
       } else if (selected.type.startsWith("image/")) {
         setFile(selected);
-        const url = URL.createObjectURL(selected);
-        setImageUrl(url);
+        setImageUrl(URL.createObjectURL(selected));
         setPdfUrl(null);
       }
     }
+  };
+
+  const readFilesAsDataUrls = (files: FileList | null): Promise<string[]> => {
+    if (!files || files.length === 0) return Promise.resolve([]);
+    return Promise.all(
+      Array.from(files).map(
+        (f) =>
+          new Promise<string>((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.onerror = () => reject(new Error("Lecture impossible"));
+            r.readAsDataURL(f);
+          })
+      )
+    );
+  };
+
+  const handleLegendImagesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    e.target.value = "";
+    if (!files?.length) return;
+    const urls = await readFilesAsDataUrls(files);
+    setLegendDataUrls((prev) => [...prev, ...urls]);
+    onLegendImages?.([...legendDataUrls, ...urls]);
+  };
+
+  const removeLegendImage = (index: number) => {
+    const next = legendDataUrls.filter((_, i) => i !== index);
+    setLegendDataUrls(next);
+    onLegendImages?.(next);
   };
 
   const handleUnderstandReport = async () => {
@@ -85,7 +118,7 @@ const PdfViewer = ({ onUnderstandReport, isSubmitting = false }: PdfViewerProps)
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {imageUrl ? <ImageIcon className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+          {imageUrl ? <Camera className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
           <span className="font-medium truncate max-w-[150px]">
             {file ? file.name : "Aucun document"}
           </span>
@@ -96,14 +129,14 @@ const PdfViewer = ({ onUnderstandReport, isSubmitting = false }: PdfViewerProps)
             className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-secondary text-secondary-foreground hover:opacity-90 transition-opacity border border-border"
           >
             <Camera className="w-3.5 h-3.5" />
-            Photo
+            Photo rapport
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-gm-gradient text-primary-foreground hover:opacity-90 transition-opacity shadow-gm"
           >
             <Upload className="w-3.5 h-3.5" />
-            PDF
+            PDF rapport
           </button>
         </div>
         <input
@@ -142,8 +175,8 @@ const PdfViewer = ({ onUnderstandReport, isSubmitting = false }: PdfViewerProps)
                 <FileText className="w-10 h-10 text-accent" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-foreground">Analysez votre rapport médical</p>
-                <p className="text-xs mt-1">Prenez une photo ou chargez un PDF</p>
+                <p className="text-sm font-medium text-foreground">Votre rapport (PDF ou photo du rapport)</p>
+                <p className="text-xs mt-1">Puis ajoutez éventuellement des images radio/IRM</p>
               </div>
               <div className="flex flex-col gap-2 w-full max-w-[200px]">
                 <button
@@ -151,20 +184,48 @@ const PdfViewer = ({ onUnderstandReport, isSubmitting = false }: PdfViewerProps)
                   className="px-5 py-2.5 text-sm font-medium rounded-xl bg-secondary text-secondary-foreground hover:opacity-90 transition-opacity border border-border"
                 >
                   <Camera className="w-4 h-4 inline mr-2" />
-                  Prendre une photo
+                  Photo du rapport
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="px-5 py-2.5 text-sm font-medium rounded-xl bg-gm-gradient text-primary-foreground hover:opacity-90 transition-opacity shadow-gm"
                 >
                   <Upload className="w-4 h-4 inline mr-2" />
-                  Sélectionner un PDF
+                  PDF du rapport
                 </button>
               </div>
             </div>
           )}
         </div>
-        {/* Bouton fixe en bas, visible dès qu’un document est chargé */}
+
+        {/* Images d'imagerie — fixe en bas, toujours visible */}
+        <div className="flex-shrink-0 border-t border-border/60 p-3 bg-card/80">
+          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+            <ImagePlus className="w-3.5 h-3.5" />
+            Images d'imagerie (radio, IRM…) — optionnel
+          </p>
+          <div className="flex flex-wrap gap-2 items-start">
+            {legendDataUrls.map((url, i) => (
+              <div key={i} className="relative group">
+                <img src={url} alt={`Imagerie ${i + 1}`} className="w-16 h-16 object-cover rounded-lg border border-border" />
+                <button type="button" onClick={() => removeLegendImage(i)} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-80 group-hover:opacity-100" aria-label="Retirer">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => legendInputRef.current?.click()}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-sm font-medium text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
+              title="Ajouter des images radio/IRM à légender"
+            >
+              <ImagePlus className="w-4 h-4" />
+              Ajouter des images (radio, IRM)
+            </button>
+          </div>
+          <input ref={legendInputRef} type="file" accept="image/*" multiple onChange={handleLegendImagesChange} className="hidden" />
+        </div>
+
         {file && (
           <div className="flex-shrink-0 border-t border-border/60 p-4 bg-card">
             {extractError && (
@@ -177,7 +238,7 @@ const PdfViewer = ({ onUnderstandReport, isSubmitting = false }: PdfViewerProps)
             >
               <Sparkles className="w-4 h-4" />
               {extracting
-                ? (imageUrl ? "Lecture de l'image (IA)..." : "Extraction du texte…")
+                ? (imageUrl ? "Lecture du rapport (IA)…" : "Extraction du texte…")
                 : isSubmitting
                   ? "Analyse en cours…"
                   : "Comprendre ce rapport"}

@@ -15,6 +15,7 @@ import { runPipeline, runExtractionOnly, runPipelineFromExtraction, sendSSE } fr
 import { getContextQuestions } from "./contextQuestions.js";
 import { chatCompletion, performOCR } from "./llm.js";
 import { CHAT_SYSTEM, CHAT_USER } from "./prompts.js";
+import { runLegendes } from "./legendes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -173,6 +174,30 @@ app.post("/api/chat", async (req, res) => {
     console.error("Chat error:", err.message);
     return res.status(500).json({
       error: err.message || "Erreur lors de la génération de la réponse.",
+    });
+  }
+});
+
+/**
+ * POST /api/report/legendes
+ * Body: { image: string (data URL base64), extraction: object }
+ * Returns: { legendes: Array<{ label, fleche: { x1, y1, x2, y2 } }> }
+ */
+app.post("/api/report/legendes", async (req, res) => {
+  try {
+    const { image, extraction } = req.body || {};
+    if (!image || typeof image !== "string") {
+      return res.status(400).json({ error: "image (base64 data url) is required" });
+    }
+    if (!extraction || typeof extraction !== "object") {
+      return res.status(400).json({ error: "extraction (object) is required" });
+    }
+    const legendes = await runLegendes(image, extraction);
+    return res.json({ legendes });
+  } catch (err) {
+    console.error("Legendes error:", err.message);
+    return res.status(500).json({
+      error: err.message || "Erreur lors de la génération des légendes.",
     });
   }
 });

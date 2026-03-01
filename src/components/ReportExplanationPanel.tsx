@@ -87,6 +87,8 @@ const ReportExplanationPanel = ({ result, isComplete = true, embedded = false }:
         </div>
       )}
 
+      {/* Les images légendées ne sont affichées qu’à gauche (onglet Images). */}
+
       {/* 2) Vulgarisation (3 blocs) — affichée uniquement après réponses au contexte et analyse */}
       {hasVulgarization && (
       <div className="rounded-xl border border-border/60 bg-card shadow-gm-soft overflow-hidden">

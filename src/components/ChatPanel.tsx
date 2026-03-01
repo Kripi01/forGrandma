@@ -21,7 +21,8 @@ interface ChatPanelProps {
   contextQuestions?: ContextQuestion[] | null;
   patientContext?: PatientContext;
   onPatientContextChange?: (id: string, value: string) => void;
-  onLaunchAnalysisWithContext?: () => void;
+  /** Lance l'analyse (vulgarisation + questions). Si contextOverride est fourni, utilise ce contexte (ex. après enregistrement des réglages). */
+  onLaunchAnalysisWithContext?: (contextOverride?: PatientContext) => void;
   setPatientContextBulk?: (ctx: PatientContext) => void;
   clearPatientContext?: () => void;
 }
@@ -70,6 +71,9 @@ const ChatPanel = ({
   const saveSettings = () => {
     setPatientContextBulk?.(settingsDraft);
     closeSettings();
+    if (pipelineResult?.extraction) {
+      onLaunchAnalysisWithContext?.(settingsDraft);
+    }
   };
   const hasContextToShow = !!pipelineResult?.extraction;
 
@@ -91,9 +95,30 @@ const ChatPanel = ({
         .slice(-5)
         .map((m) => ({ role: m.role as "user" | "assistant", text: m.text }));
 
-      let contextStr = pipelineResult?.extraction
-        ? `Extraction : ${JSON.stringify(pipelineResult.extraction, null, 2)}\n\nVulgarisation : ${pipelineResult.vulgarization ?? ""}`
-        : "";
+      let contextStr = "";
+      if (pipelineResult?.extraction) {
+        try {
+          const seen = new WeakSet<object>();
+          const extractionStr = JSON.stringify(
+            pipelineResult.extraction,
+            (_, value) => {
+              if (typeof value === "object" && value !== null) {
+                if (seen.has(value)) return "[Circular]";
+                seen.add(value);
+              }
+              return value;
+            },
+            2
+          );
+          contextStr = `Extraction : ${extractionStr}\n\nVulgarisation : ${pipelineResult.vulgarization ?? ""}`;
+        } catch {
+          contextStr = `Vulgarisation : ${pipelineResult.vulgarization ?? ""}`;
+        }
+      }
+      if (pipelineResult?.legendItems && pipelineResult.legendItems.length > 0) {
+        const allLabels = pipelineResult.legendItems.flatMap((it) => it.legendes?.map((l) => l.label).filter(Boolean) ?? []);
+        contextStr += `\n\nImages légendées : des images d'imagerie (radio/IRM) accompagnent ce rapport et sont en lien avec l'explication vulgarisée. Légendes : ${allLabels.length > 0 ? allLabels.map((l, i) => `${i + 1}) « ${l} »`).join(" ; ") : "en cours"}. Quand c'est pertinent, fais référence à ces images et légendes (ex. \"comme indiqué sur l'image, la zone « … » correspond à…\").`;
+      }
       if (Object.keys(patientContext).length > 0) {
         contextStr += `\n\nContexte patient (réponses aux questions de contexte) :\n${Object.entries(patientContext)
           .filter(([, v]) => v != null && String(v).trim() !== "")
@@ -165,17 +190,15 @@ const ChatPanel = ({
                   : "L'analyse du rapport s'affiche ici."}
             </p>
           </div>
-          {hasContextToShow && (
-            <button
-              type="button"
-              onClick={openSettings}
-              className="p-2 rounded-lg text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0"
-              title="Voir ou modifier le contexte patient"
-              aria-label="Réglages contexte"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={openSettings}
+            className="p-2 rounded-lg text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0"
+            title="Contexte patient (réponses pour personnaliser l'explication)"
+            aria-label="Réglages contexte"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -232,6 +255,9 @@ const ChatPanel = ({
                   clearPatientContext?.();
                   setSettingsDraft({});
                   closeSettings();
+                  if (pipelineResult?.extraction) {
+                    onLaunchAnalysisWithContext?.({});
+                  }
                 }}
                 className="px-3 py-2 text-xs font-medium rounded-lg border border-border text-muted-foreground hover:bg-secondary transition-colors"
               >
@@ -325,7 +351,7 @@ const ChatPanel = ({
                     <div className="mt-4">
                       <button
                         type="button"
-                        onClick={onLaunchAnalysisWithContext}
+                        onClick={() => onLaunchAnalysisWithContext?.(patientContext)}
                         disabled={reportLoading}
                         className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-gm-gradient text-primary-foreground font-semibold text-sm shadow-gm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                       >

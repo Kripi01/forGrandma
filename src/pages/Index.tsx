@@ -1,15 +1,56 @@
 import { useState, useCallback } from "react";
 import GrandMaLogo from "@/components/GrandMaLogo";
+import LeftPanel from "@/components/LeftPanel";
 import PdfViewer from "@/components/PdfViewer";
 import ChatPanel from "@/components/ChatPanel";
 import type {
   ReportPipelineResult,
   ReportPipelineResultPartial,
+  LegendItem,
+  ExtractedFacts,
   ContextQuestion,
   PatientContext,
 } from "@/types/report";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
+
+/** Clé connues d'ExtractedFacts pour éviter toute référence circulaire à la sérialisation. */
+const EXTRACTION_KEYS: (keyof ExtractedFacts)[] = [
+  "localisation",
+  "type_examen",
+  "faits_principaux",
+  "termes_techniques",
+  "conclusion_rapport",
+  "niveau_urgence",
+];
+
+/** Retourne une copie sérialisable de l'extraction (évite "cyclic object value"). */
+function getSafeExtraction(extraction: unknown): ExtractedFacts {
+  if (!extraction || typeof extraction !== "object") {
+    return {};
+  }
+  const raw = extraction as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const key of EXTRACTION_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(raw, key)) {
+      const v = raw[key];
+      if (Array.isArray(v)) out[key] = [...v];
+      else if (v !== null && v !== undefined) out[key] = v;
+    }
+  }
+  return out as ExtractedFacts;
+}
+
+/** Contexte patient en objet plat (évite références circulaires). */
+function getSafePatientContext(ctx: PatientContext | undefined): PatientContext {
+  if (!ctx || typeof ctx !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(ctx).filter(
+      (entry): entry is [string, string] =>
+        typeof entry[0] === "string" && typeof entry[1] === "string"
+    )
+  );
+}
 
 /** Parse le flux SSE (lignes event: / data:) et appelle onEvent pour chaque message. */
 async function consumeSSE(
@@ -48,6 +89,8 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [contextQuestions, setContextQuestions] = useState<ContextQuestion[] | null>(null);
   const [patientContext, setPatientContext] = useState<PatientContext>({});
+  /** Images d'imagerie (radio/IRM) ajoutées en plus du rapport — pour les légendes */
+  const [legendImageDataUrls, setLegendImageDataUrls] = useState<string[]>([]);
 
   /** Phase 1 : extraction seule pour obtenir le type d'examen et les questions de contexte */
   const handleUnderstandReport = useCallback(async (reportText: string) => {
@@ -76,43 +119,80 @@ const Index = () => {
     }
   }, []);
 
-  /** Phase 2 : lancer vulgarisation + questions avec le contexte patient (après réponses dans le chat) */
-  const handleLaunchAnalysisWithContext = useCallback(async () => {
-    if (!pipelineResult?.extraction) return;
-    setError(null);
-    setLoading(true);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 180_000);
-    try {
-      const res = await fetch(`${API_BASE}/api/report/understand-stream`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          extraction: pipelineResult.extraction,
-          patientContext,
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Erreur ${res.status}`);
-      }
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("Stream non disponible");
-      await consumeSSE(reader, (event, data) => {
-        if (event === "error") {
-          setError((data as { error?: string }).error ?? "Erreur inconnue");
-          return;
+  /** Phase 2 : lancer vulgarisation + questions avec le contexte patient. Si contextOverride est fourni (ex. après modification des réglages), on l'utilise pour la requête. */
+  const handleLaunchAnalysisWithContext = useCallback(
+    async (contextOverride?: PatientContext) => {
+      if (!pipelineResult?.extraction) return;
+      const contextToUse = contextOverride ?? patientContext;
+      setError(null);
+      setLoading(true);
+      if (contextOverride != null) setPatientContext(contextOverride);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 180_000);
+      try {
+        const extractionPlain = getSafeExtraction(pipelineResult.extraction);
+        const res = await fetch(`${API_BASE}/api/report/understand-stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            extraction: extractionPlain,
+            patientContext: getSafePatientContext(contextToUse),
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || `Erreur ${res.status}`);
         }
-        if (event === "done") {
-          setPipelineResult(data as ReportPipelineResult);
-          setLoading(false);
-          return;
-        }
-        setPipelineResult((prev) => ({ ...prev, ...data }));
-      });
-    } catch (e) {
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("Stream non disponible");
+        await consumeSSE(reader, (event, data) => {
+          if (event === "error") {
+            setError((data as { error?: string }).error ?? "Erreur inconnue");
+            return;
+          }
+          if (event === "done") {
+            const fullResult = data as ReportPipelineResult;
+            setPipelineResult({
+              ...fullResult,
+              legendItems:
+                legendImageDataUrls.length > 0
+                  ? legendImageDataUrls.map((url) => ({ imageUrl: url, legendes: undefined }))
+                  : undefined,
+            });
+            setLoading(false);
+            if (legendImageDataUrls.length > 0 && fullResult.extraction) {
+              const extractionPlain = getSafeExtraction(fullResult.extraction);
+              Promise.all(
+                legendImageDataUrls.map((url) =>
+                  fetch(`${API_BASE}/api/report/legendes`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: url, extraction: extractionPlain }),
+                  })
+                    .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Legendes failed"))))
+                    .then((data: { legendes: LegendItem["legendes"] }) => ({ url, legendes: data.legendes }))
+                    .catch(() => ({ url, legendes: [] }))
+                )
+              ).then((results) =>
+                setPipelineResult((prev) => {
+                  if (!prev?.legendItems) return prev;
+                  return {
+                    ...prev,
+                    legendItems: prev.legendItems.map((item, i) => ({
+                      ...item,
+                      legendes: results[i]?.legendes ?? [],
+                    })),
+                  };
+                })
+              );
+            }
+            return;
+          }
+          setPipelineResult((prev) => ({ ...prev, ...data }));
+        });
+      } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         setError("L'analyse a pris trop de temps. Réessayez.");
       } else {
@@ -122,7 +202,9 @@ const Index = () => {
       clearTimeout(timeoutId);
       setLoading(false);
     }
-  }, [pipelineResult?.extraction, patientContext]);
+    },
+    [pipelineResult?.extraction, patientContext, legendImageDataUrls]
+  );
 
   const handlePatientContextChange = useCallback((id: string, value: string) => {
     setPatientContext((prev) => ({ ...prev, [id]: value }));
@@ -146,7 +228,7 @@ const Index = () => {
             <h1 className="text-base font-display font-bold text-foreground tracking-tight leading-tight">
               For <span className="text-gm-gradient">GrandMa</span>
             </h1>
-            <p className="text-[11px] text-muted-foreground font-medium tracking-wide">Votre rapport, expliqué simplement</p>
+            <p className="text-[11px] text-muted-foreground font-medium tracking-wide">Votre rapport médical, expliqué simplement</p>
           </div>
         </div>
       </header>
@@ -154,10 +236,13 @@ const Index = () => {
       {/* Main layout: 50% PDF + paste | 50% Explanation + Chat */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0">
         <div className="overflow-hidden border-r border-border/40">
-          <PdfViewer
-            onUnderstandReport={handleUnderstandReport}
-            isSubmitting={loading}
-          />
+          <LeftPanel legendItems={pipelineResult?.legendItems}>
+            <PdfViewer
+              onUnderstandReport={handleUnderstandReport}
+              onLegendImages={setLegendImageDataUrls}
+              isSubmitting={loading}
+            />
+          </LeftPanel>
         </div>
         <div className="overflow-hidden flex flex-col min-h-0">
           {error && (
