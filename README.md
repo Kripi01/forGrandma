@@ -1,43 +1,40 @@
 # For GrandMa
 
-Your medical report, explained simply.
+![App Demo](./docs/demo.png)
 
-![Demo Image](docs/demo.png)
+An app to help you understand your technical medical report in plain English. Simple enough for you, your family, and even Grandma!
 
-## Getting Started (A to Z)
+## 🚀 Getting Started
 
-### 1. Installation
-Install dependencies at the root (frontend) and in the server folder.
+1. **Installation**:
 
-```bash
-npm install
-cd server && npm install && cd ..
-```
+   ```bash
+   npm install
+   cd server && npm install && cd ..
+   ```
 
-### 2. Configuration
-Create a `.env` file at the root with your Google Gemini API key:
-```env
-GOOGLE_API_KEY=your_key_here
-```
+2. **Configuration**:
 
-### 3. Running the App
-Start both the frontend and the backend with a single command:
+   ```bash
+   cp .env.example .env # Add your GOOGLE_API_KEY in the .env file
+   ```
 
-```bash
-npm run dev
-```
-The application is accessible at [http://localhost:8080](http://localhost:8080).
+3. **Development**:
 
----
+   ```bash
+   npm run dev
+   ```
 
-## Project Structure
+   - Frontend: [http://localhost:8080](http://localhost:8080)
+   - Backend: [http://localhost:3001](http://localhost:3001)
 
-- `src/` : Frontend React (Vite)
-  - `components/` : UI components (Chat, PDF, Legends)
-  - `pages/Index.tsx` : Main page
-- `server/` : Backend Node.js (Express)
-  - `index.js` : API endpoints
-  - `pipeline.js` : Analysis pipeline logic (Gemma 3 27B)
-  - `prompts.js` : AI instructions
-  - `llm.js` : Google Gemini API communication (Gemma 3 27B)
-- `docs/` : Test documents and images for demo
+## 🛠️ Commands
+
+- `npm run dev`: Frontend + Backend (development mode)
+
+## 📂 Structure
+
+- `src/`: Frontend React (Vite)
+- `server/`: Backend Node.js (Express)
+- `docs/`: Test documents, images, and demo assets
+- `public/`: Static assets (favicon, etc.)
