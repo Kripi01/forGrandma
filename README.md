@@ -1,11 +1,13 @@
 # For GrandMa
 
-Votre rapport médical, expliqué simplement.
+Your medical report, explained simply.
 
-## Lancement (A à Z)
+![Demo Image](docs/demo.png)
+
+## Getting Started (A to Z)
 
 ### 1. Installation
-Installez les dépendances à la racine (frontend) et dans le dossier serveur.
+Install dependencies at the root (frontend) and in the server folder.
 
 ```bash
 npm install
@@ -13,28 +15,29 @@ cd server && npm install && cd ..
 ```
 
 ### 2. Configuration
-Créez un fichier `.env` à la racine avec votre clé API Google Gemini :
+Create a `.env` file at the root with your Google Gemini API key:
 ```env
-GOOGLE_API_KEY=votre_cle_ici
+GOOGLE_API_KEY=your_key_here
 ```
 
-### 3. Démarrage
-Lancez l'application (frontend + backend) avec :
+### 3. Running the App
+Start both the frontend and the backend with a single command:
 
 ```bash
 npm run dev
 ```
-L'application est accessible sur [http://localhost:8080](http://localhost:8080).
+The application is accessible at [http://localhost:8080](http://localhost:8080).
 
 ---
 
-## Structure du projet
+## Project Structure
 
 - `src/` : Frontend React (Vite)
-  - `components/` : Composants de l'interface (Chat, PDF, Légendes)
-  - `pages/Index.tsx` : Page principale
+  - `components/` : UI components (Chat, PDF, Legends)
+  - `pages/Index.tsx` : Main page
 - `server/` : Backend Node.js (Express)
-  - `index.js` : Points d'entrée API
-  - `pipeline.js` : Logique d'analyse LLM
-  - `prompts.js` : Instructions envoyées à l'IA
-- `docs/` : Documents et images de test pour la démo
+  - `index.js` : API endpoints
+  - `pipeline.js` : Analysis pipeline logic (Gemma 3 27B)
+  - `prompts.js` : AI instructions
+  - `llm.js` : Google Gemini API communication (Gemma 3 27B)
+- `docs/` : Test documents and images for demo
